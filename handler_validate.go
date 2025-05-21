@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func handlerChirpsValidate(w http.ResponseWriter, req *http.Request) {
@@ -10,7 +11,7 @@ func handlerChirpsValidate(w http.ResponseWriter, req *http.Request) {
 		Body string `json:"body"`
 	}
 	type returnValid struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -27,7 +28,27 @@ func handlerChirpsValidate(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	badWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	cleanChirp := replaceBadWords(params.Body, badWords)
+
 	respondWithJSON(w, http.StatusOK, returnValid{
-		Valid: true,
+		CleanedBody: cleanChirp,
 	})
+}
+
+func replaceBadWords(chirp string, badWords map[string]struct{}) string {
+	words := strings.Split(chirp, " ")
+	for i, word := range words {
+		loweredWord := strings.ToLower(word)
+		if _, ok := badWords[loweredWord]; ok {
+			words[i] = "****"
+		}
+	}
+
+	return strings.Join(words, " ")
 }
