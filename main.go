@@ -20,6 +20,10 @@ func main() {
 	if dbURL == "" {
 		log.Fatalf("DB_URL must be set")
 	}
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -32,6 +36,7 @@ func main() {
 	const port = "8080"
 
 	apiCfg := apiConfig{
+		platform:       platform,
 		db:             dbQueries,
 		fileserverHits: atomic.Int32{},
 	}
@@ -42,6 +47,7 @@ func main() {
 	serverMux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	serverMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 	serverMux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	serverMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -57,6 +63,7 @@ func main() {
 }
 
 type apiConfig struct {
+	platform       string
 	db             *database.Queries
 	fileserverHits atomic.Int32
 }
