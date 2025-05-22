@@ -8,21 +8,25 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/Shredder42/learn-http-servers/internal/database"
 	"github.com/joho/godotenv"
-	"github.com/learn-http-servers/internal/database"
+
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
-
-	db, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		fmt.Println(err)
+	if dbURL == "" {
+		log.Fatalf("DB_URL must be set")
 	}
-	defer db.Close()
-	dbQueries := database.New(db)
+
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error opening database: %s", err)
+	}
+
+	dbQueries := database.New(dbConn)
 
 	const filepathRoot = "."
 	const port = "8080"
