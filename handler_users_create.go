@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Shredder42/learn-http-servers/internal/auth"
+	"github.com/Shredder42/learn-http-servers/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -14,13 +16,14 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Password  string    `json:"-"`
+}
+type parameters struct {
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, req *http.Request) {
-	type parameters struct {
-		Email string `json:"email"`
-	}
-
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -29,7 +32,15 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	user, err := cfg.db.CreateUser(req.Context(), params.Email)
+	hashed_password, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error securing password", err)
+	}
+
+	user, err := cfg.db.CreateUser(req.Context(), database.CreateUserParams{
+		HashedPassword: hashed_password,
+		Email:          params.Email,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating user", err)
 	}

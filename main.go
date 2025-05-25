@@ -50,6 +50,7 @@ func main() {
 	serverMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUsers)
 	serverMux.HandleFunc("GET /api/chirps", apiCfg.handlerRetrieveChirps)
 	serverMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirps)
+	serverMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 
 	server := &http.Server{
 		Addr:    ":" + port,
