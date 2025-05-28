@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Shredder42/learn-http-servers/internal/auth"
 	"github.com/Shredder42/learn-http-servers/internal/database"
 	"github.com/google/uuid"
 )
@@ -22,13 +23,24 @@ type Chirp struct {
 
 func (cfg *apiConfig) handlerCreateChirps(w http.ResponseWriter, req *http.Request) {
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error getting bearer token", err)
+		return
+	}
+
+	UserID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid web token", err)
+		return
 	}
 
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		return
@@ -37,11 +49,12 @@ func (cfg *apiConfig) handlerCreateChirps(w http.ResponseWriter, req *http.Reque
 	cleanChirp, err := validateChirp(params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error(), err)
+		return
 	}
 
 	chirp, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
 		Body:   cleanChirp,
-		UserID: params.UserID,
+		UserID: UserID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating chirp", err)

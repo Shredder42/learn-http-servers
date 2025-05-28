@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -67,4 +68,31 @@ func TestJWTSecretWrong(t *testing.T) {
 	if (err != nil) != wantErr {
 		t.Error("secret does not match", err)
 	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+
+	header := http.Header{
+		"Content-Type":  {"application/json"},
+		"Authorization": {"Bearer auth-string-4207"},
+	}
+
+	bearerToken, _ := GetBearerToken(header)
+	if bearerToken != "auth-string-4207" {
+		t.Error("incorrect token parse")
+	}
+
+}
+
+func TestGetBearerTokenEmpty(t *testing.T) {
+	wantErr := true
+	header := http.Header{
+		"Content-Type": {"application/json"},
+	}
+
+	_, err := GetBearerToken(header)
+	if (err != nil) != wantErr {
+		t.Error("incorrect handle of empty token", err)
+	}
+
 }

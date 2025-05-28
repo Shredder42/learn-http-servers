@@ -24,6 +24,10 @@ func main() {
 	if platform == "" {
 		log.Fatal("PLATFORM must be set")
 	}
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		log.Fatal("SECRET must be set")
+	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -36,6 +40,7 @@ func main() {
 	const port = "8080"
 
 	apiCfg := apiConfig{
+		secret:         secret,
 		platform:       platform,
 		db:             dbQueries,
 		fileserverHits: atomic.Int32{},
@@ -66,6 +71,7 @@ func main() {
 }
 
 type apiConfig struct {
+	secret         string
 	platform       string
 	db             *database.Queries
 	fileserverHits atomic.Int32
