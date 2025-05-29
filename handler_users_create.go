@@ -33,13 +33,13 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	hashed_password, err := auth.HashPassword(params.Password)
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error securing password", err)
 	}
 
 	user, err := cfg.db.CreateUser(req.Context(), database.CreateUserParams{
-		HashedPassword: hashed_password,
+		HashedPassword: hashedPassword,
 		Email:          params.Email,
 	})
 	if err != nil {
