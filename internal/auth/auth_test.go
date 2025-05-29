@@ -3,7 +3,6 @@ package auth
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -33,7 +32,7 @@ func TestJWTCorrect(t *testing.T) {
 	userID := uuid.New()
 	tokenSecret := "ghost-is-the-best-jwt-key-ever-120723"
 
-	tokenString, _ := MakeJWT(userID, tokenSecret, 1*time.Second)
+	tokenString, _ := MakeJWT(userID, tokenSecret)
 
 	_, err := ValidateJWT(tokenString, tokenSecret)
 	if (err != nil) != wantErr {
@@ -41,20 +40,20 @@ func TestJWTCorrect(t *testing.T) {
 	}
 }
 
-func TestJWTTimeOut(t *testing.T) {
-	wantErr := true
-	userID := uuid.New()
-	tokenSecret := "ghost-is-the-best-jwt-key-ever-120723"
+// func TestJWTTimeOut(t *testing.T) {
+// 	wantErr := true
+// 	userID := uuid.New()
+// 	tokenSecret := "ghost-is-the-best-jwt-key-ever-120723"
 
-	tokenString, _ := MakeJWT(userID, tokenSecret, 1*time.Second)
+// 	tokenString, _ := MakeJWT(userID, tokenSecret)
 
-	time.Sleep(2 * time.Second)
+// 	time.Sleep(2 * time.Second)
 
-	_, err := ValidateJWT(tokenString, tokenSecret)
-	if (err != nil) != wantErr {
-		t.Error("JWT expired", err)
-	}
-}
+// 	_, err := ValidateJWT(tokenString, tokenSecret)
+// 	if (err != nil) != wantErr {
+// 		t.Error("JWT expired", err)
+// 	}
+// }
 
 func TestJWTSecretWrong(t *testing.T) {
 	wantErr := true
@@ -62,7 +61,7 @@ func TestJWTSecretWrong(t *testing.T) {
 	tokenSecret := "ghost-is-the-best-jwt-key-ever-120723"
 	otherSecret := "shredder-is-the-best-jwt-key-ever-120723"
 
-	tokenString, _ := MakeJWT(userID, tokenSecret, 1*time.Second)
+	tokenString, _ := MakeJWT(userID, tokenSecret)
 
 	_, err := ValidateJWT(tokenString, otherSecret)
 	if (err != nil) != wantErr {

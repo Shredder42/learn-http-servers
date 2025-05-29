@@ -6,9 +6,16 @@ import (
 	"time"
 
 	"github.com/Shredder42/learn-http-servers/internal/auth"
+	"github.com/Shredder42/learn-http-servers/internal/database"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
+	type response struct {
+		User
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -29,23 +36,42 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	expirationTime := time.Hour
-	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < 3600 {
-		expirationTime = time.Duration(params.ExpiresInSeconds) * time.Second
-	}
-
-	tokenString, err := auth.MakeJWT(user.ID, cfg.secret, expirationTime)
+	tokenString, err := auth.MakeJWT(user.ID, cfg.secret)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't get token string", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     tokenString,
+	refreshToken, _ := auth.MakeRefreshToken()
+
+	_, err = cfg.db.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().UTC().Add(time.Hour * 24 * 60),
 	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error creating refresh token", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User: User{
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			Email:     user.Email,
+		},
+		Token:        tokenString,
+		RefreshToken: refreshToken,
+	})
+
+	// respondWithJSON(w, http.StatusOK, User{
+	// 	ID:           user.ID,
+	// 	CreatedAt:    user.CreatedAt,
+	// 	UpdatedAt:    user.UpdatedAt,
+	// 	Email:        user.Email,
+	// 	Token:        tokenString,
+	// 	RefreshToken: refreshToken,
+	// })
 
 }

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"strings"
@@ -24,9 +26,9 @@ func CheckPasswordHash(hash, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
-func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+func MakeJWT(userID uuid.UUID, tokenSecret string) (string, error) {
 	timeNow := jwt.NewNumericDate(time.Now().UTC())
-	timeExpires := jwt.NewNumericDate(time.Now().UTC().Add(expiresIn))
+	timeExpires := jwt.NewNumericDate(time.Now().UTC().Add(time.Hour))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Issuer:    "chirpy",
@@ -82,8 +84,20 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", errors.New("authorization header does not exist")
 	}
 
-	rawString = strings.ReplaceAll(rawString, "Bearer", "")
-	tokenString := strings.Trim(rawString, " ")
+	splitAuth := strings.Split(rawString, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
+		return "", errors.New("malformed authorization header")
+	}
 
-	return tokenString, nil
+	return splitAuth[1], nil
+}
+
+func MakeRefreshToken() (string, error) {
+	key := make([]byte, 32)
+	rand.Read(key)
+
+	encodedStr := hex.EncodeToString(key)
+
+	return encodedStr, nil
+
 }
