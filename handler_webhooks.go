@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Shredder42/learn-http-servers/internal/auth"
 	"github.com/Shredder42/learn-http-servers/internal/database"
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerUpgrade(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, req *http.Request) {
 
 	type Data struct {
 		UserID string `json:"user_id"` // could have set this to UUID as well
@@ -22,9 +23,20 @@ func (cfg *apiConfig) handlerUpgrade(w http.ResponseWriter, req *http.Request) {
 		Data  Data   `json:"data"`
 	}
 
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Error getting api key", err)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "api key is invalid", err)
+		return
+	}
+
 	decoder := json.NewDecoder(req.Body)
 	webhook := Webhook{}
-	err := decoder.Decode(&webhook)
+	err = decoder.Decode(&webhook)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		return

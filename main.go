@@ -20,13 +20,20 @@ func main() {
 	if dbURL == "" {
 		log.Fatalf("DB_URL must be set")
 	}
+
 	platform := os.Getenv("PLATFORM")
 	if platform == "" {
 		log.Fatal("PLATFORM must be set")
 	}
-	secret := os.Getenv("SECRET")
-	if secret == "" {
+
+	jwtSecret := os.Getenv("SECRET")
+	if jwtSecret == "" {
 		log.Fatal("SECRET must be set")
+	}
+
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY must be set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
@@ -40,7 +47,8 @@ func main() {
 	const port = "8080"
 
 	apiCfg := apiConfig{
-		secret:         secret,
+		polkaKey:       polkaKey,
+		jwtSecret:      jwtSecret,
 		platform:       platform,
 		db:             dbQueries,
 		fileserverHits: atomic.Int32{},
@@ -60,7 +68,7 @@ func main() {
 	serverMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 	serverMux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUsers)
 	serverMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirps)
-	serverMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerUpgrade)
+	serverMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerWebhook)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -76,7 +84,8 @@ func main() {
 }
 
 type apiConfig struct {
-	secret         string
+	polkaKey       string
+	jwtSecret      string
 	platform       string
 	db             *database.Queries
 	fileserverHits atomic.Int32

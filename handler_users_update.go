@@ -16,7 +16,7 @@ func (cfg *apiConfig) handlerUpdateUsers(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	UserID, err := auth.ValidateJWT(token, cfg.secret)
+	UserID, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid web token", err)
 		return

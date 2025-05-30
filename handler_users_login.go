@@ -36,7 +36,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tokenString, err := auth.MakeJWT(user.ID, cfg.secret)
+	tokenString, err := auth.MakeJWT(user.ID, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't get token string", err)
 		return

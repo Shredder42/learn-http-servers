@@ -15,7 +15,7 @@ func (cfg *apiConfig) handlerDeleteChirps(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	userID, err := auth.ValidateJWT(token, cfg.secret)
+	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid web token", err)
 		return
