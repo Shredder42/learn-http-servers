@@ -33,11 +33,13 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	parsedID, err := uuid.Parse(chirpID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error parsing chirp ID", err)
+		return
 	}
 
 	dbChirp, err := cfg.db.GetChirp(req.Context(), parsedID)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "chirp not found", err)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, Chirp{
