@@ -24,3 +24,10 @@ SET email = $1,
     updated_at = $3
 WHERE id = $4
 RETURNING *;
+
+-- name: UpgradeUser :one
+UPDATE users
+SET is_chirpy_red = TRUE,
+    updated_at = $1
+WHERE id = $2
+RETURNING *;
