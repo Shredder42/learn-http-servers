@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/Shredder42/learn-http-servers/internal/database"
 	"github.com/google/uuid"
@@ -9,9 +10,10 @@ import (
 
 func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, req *http.Request) {
 	authorID := req.URL.Query().Get("author_id")
-	dbChirps := []database.Chirp{} // not sure about this underline. might be better to use var dbChirps []database.Chirp
-	Chirps := []Chirp{}
-	var err error
+	sortMethod := req.URL.Query().Get("sort")
+	dbChirps := []database.Chirp{}
+	chirps := []Chirp{}
+	var err error // this is an interface so err := error{} doesn't work
 
 	if len(authorID) > 0 {
 		parsedUserID, parseErr := uuid.Parse(authorID)
@@ -33,7 +35,7 @@ func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, req *http.Req
 	}
 
 	for _, dbChirp := range dbChirps {
-		Chirps = append(Chirps, Chirp{
+		chirps = append(chirps, Chirp{
 			ID:        dbChirp.ID,
 			CreatedAt: dbChirp.CreatedAt,
 			UpdatedAt: dbChirp.UpdatedAt,
@@ -42,7 +44,19 @@ func (cfg *apiConfig) handlerRetrieveChirps(w http.ResponseWriter, req *http.Req
 		})
 	}
 
-	respondWithJSON(w, http.StatusOK, Chirps)
+	// sort direction is asc by default
+	if sortMethod != "asc" && sortMethod != "desc" && sortMethod != "" {
+		respondWithError(w, http.StatusBadRequest, "invalid sort method", err)
+		return
+	}
+
+	if sortMethod == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
 
 }
 
