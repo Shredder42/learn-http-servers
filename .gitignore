@@ -2,3 +2,4 @@ out
 .env
 learn-http-servers
 database.json
+postgres_goose
